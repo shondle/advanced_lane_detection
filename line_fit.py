@@ -79,6 +79,8 @@ def line_fit(binary_warped):
 	left_fit = np.polyfit(lefty, leftx, 2)
 	right_fit = np.polyfit(righty, rightx, 2)
 
+	print(f"the left fit is {left_fit}")
+
 	# Return a dict of relevant variables
 	ret = {}
 	ret['left_fit'] = left_fit
@@ -126,6 +128,8 @@ def tune_fit(binary_warped, left_fit, right_fit):
 	right_fitx = right_fit[0]*ploty**2 + right_fit[1]*ploty + right_fit[2]
 
 	# Return a dict of relevant variables
+
+	print('reached here')
 	ret = {}
 	ret['left_fit'] = left_fit
 	ret['right_fit'] = right_fit
@@ -133,6 +137,10 @@ def tune_fit(binary_warped, left_fit, right_fit):
 	ret['nonzeroy'] = nonzeroy
 	ret['left_lane_inds'] = left_lane_inds
 	ret['right_lane_inds'] = right_lane_inds
+
+	print(f"dict values are {ret['left_fit']}")
+
+
 
 	return ret
 
