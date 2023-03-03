@@ -256,7 +256,7 @@ def calc_curve(left_lane_inds, right_lane_inds, nonzerox, nonzeroy):
 	return left_curverad, right_curverad
 
 
-def calc_vehicle_offset(undist, left_fit, right_fit):
+def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	"""
 	Calculate vehicle offset from lane center, in meters
 	"""
@@ -265,6 +265,15 @@ def calc_vehicle_offset(undist, left_fit, right_fit):
 	bottom_x_left = left_fit[0]*(bottom_y**2) + left_fit[1]*bottom_y + left_fit[2]
 	bottom_x_right = right_fit[0]*(bottom_y**2) + right_fit[1]*bottom_y + right_fit[2]
 	vehicle_offset = undist.shape[1]/2 - (bottom_x_left + bottom_x_right)/2
+
+	depth_intrin = depth_frame.profile.as_video_stream_profile().intrinsics
+	# left_point = rs.rs2_deproject_pixel_to_point(depth_intrin, [bottom_x_left, bottom_y], depth_frame.get_distance(bottom_x_left, bottom_y))
+	# right_point = rs.rs2_deproject_pixel_to_point(depth_intrin, [bottom_x_right, bottom_y], depth_frame.get_distance(bottom_x_right, bottom_y))
+	rs_middle = rs.rs2_deproject_pixel_to_point(depth_intrin, [middle, bottom_y], depth_frame.get_distance(middle, bottom_y))
+	rs_shouldbe = rs.rs2_deproject_pixel_to_point(depth_intrin, [shouldbe, bottom_y], depth_frame.get_distance(shouldbe, bottom_y))
+
+
+	offset = rs_shouldbe[0] - rs_middle[0]
 
 	# Convert pixel offset to meters
 	xm_per_pix = 3.7/700 # meters per pixel in x dimension
