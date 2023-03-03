@@ -25,7 +25,7 @@ left_lane_inds, right_lane_inds = None, None  # for calculating curvature
 
 
 # MoviePy video annotation will call this function
-def annotate_image(img_in):
+def annotate_image(img_in, depth_frame):
 	"""
 	Annotate the input image with lane line markings
 	Returns annotated image
@@ -88,7 +88,7 @@ def annotate_image(img_in):
 		else:
 			detected = False
 
-	vehicle_offset = calc_vehicle_offset(undist, left_fit, right_fit)
+	vehicle_offset, offset = calc_vehicle_offset(undist, left_fit, right_fit, depth_frame)
 
 	# Perform final visualization on top of original undistorted image
 	result = final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset)
@@ -136,7 +136,7 @@ if __name__ == '__main__':
 			# ret, binary_image = cv2.threshold(cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY), 210, 255, cv2.THRESH_BINARY)
 
 			try:	
-				binary_image = annotate_image(color_image)
+				binary_image = annotate_image(color_image, depth_frame)
 			except:
 				print("Distortion amount exceeded")
 

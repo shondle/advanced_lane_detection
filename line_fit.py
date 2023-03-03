@@ -256,7 +256,7 @@ def calc_curve(left_lane_inds, right_lane_inds, nonzerox, nonzeroy):
 	return left_curverad, right_curverad
 
 
-def calc_vehicle_offset(undist, left_fit, right_fit):
+def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	"""
 	Calculate vehicle offset from lane center, in meters
 	"""
@@ -266,11 +266,15 @@ def calc_vehicle_offset(undist, left_fit, right_fit):
 	bottom_x_right = right_fit[0]*(bottom_y**2) + right_fit[1]*bottom_y + right_fit[2]
 	vehicle_offset = undist.shape[1]/2 - (bottom_x_left + bottom_x_right)/2
 
+	
+
 	# Convert pixel offset to meters
 	xm_per_pix = 3.7/700 # meters per pixel in x dimension
 	vehicle_offset *= xm_per_pix
 
-	return vehicle_offset
+	offset = 1
+
+	return vehicle_offset, offset
 
 
 def final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset):
