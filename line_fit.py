@@ -5,6 +5,7 @@ import matplotlib.image as mpimg
 import pickle
 from combined_thresh import combined_thresh
 from perspective_transform import perspective_transform
+import pyrealsense2 as rs
 
 
 def line_fit(binary_warped):
@@ -266,13 +267,28 @@ def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	bottom_x_right = right_fit[0]*(bottom_y**2) + right_fit[1]*bottom_y + right_fit[2]
 	vehicle_offset = undist.shape[1]/2 - (bottom_x_left + bottom_x_right)/2
 
-	
 
+	print(f"the bottom_x value is {bottom_x_left}")
+	print(f"the true middle value is {bottom_x_right}")
+	print(f"the bottom_x value is {bottom_y}")
+
+	depth_intrin2 = depth_frame.profile.as_video_stream_profile().intrinsics
+
+	true_middle = (bottom_x_left + bottom_x_right)/2
+	true_middle = true_middle- 1280/2
+	shape = undist.shape[1]/2 - 1280/2
+
+	# true_middle = (bottom_x_left + bottom_x_right)/2   # possible point of failure 
+	point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(15, 15))
+	# point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
+	middle = rs.rs2_deproject_pixel_to_point(depth_intrin2, [shape, bottom_y], depth_frame.get_distance(15, 15))
+
+	# offset = point1[0] - middle[0]
+
+	offset  = 1
 	# Convert pixel offset to meters
 	xm_per_pix = 3.7/700 # meters per pixel in x dimension
 	vehicle_offset *= xm_per_pix
-
-	offset = 1
 
 	return vehicle_offset, offset
 
