@@ -93,7 +93,7 @@ def annotate_image(img_in, depth_frame):
 	# Perform final visualization on top of original undistorted image
 	result = final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset)
 
-	return result
+	return result, offset
 
 
 def annotate_video(input_file, output_file):
@@ -107,7 +107,7 @@ if __name__ == '__main__':
 
 	pipeline = rs.pipeline()
 	config = rs.config()
-	config.enable_stream(rs.stream.depth, 640, 480, rs.format.z16, 30)
+	config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
 	# config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
 	config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
 
@@ -136,7 +136,7 @@ if __name__ == '__main__':
 			# ret, binary_image = cv2.threshold(cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY), 210, 255, cv2.THRESH_BINARY)
 
 			try:	
-				binary_image = annotate_image(color_image, depth_frame)
+				binary_image, offset = annotate_image(color_image, depth_frame)
 			except:
 				print("Distortion amount exceeded")
 
@@ -145,6 +145,8 @@ if __name__ == '__main__':
 			line_num = 1
 			# Detect lines using HoughLinesP
 			# lines = cv2.HoughLinesP(binary_image, 1, np.pi/180, 50, maxLineGap=50)
+
+			print(f"The offset value is {offset}")
 
 			# Show images
 			cv2.imshow("Binary Image", binary_image)

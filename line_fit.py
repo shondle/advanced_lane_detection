@@ -268,23 +268,41 @@ def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	vehicle_offset = undist.shape[1]/2 - (bottom_x_left + bottom_x_right)/2
 
 
-	print(f"the bottom_x value is {bottom_x_left}")
-	print(f"the true middle value is {bottom_x_right}")
-	print(f"the bottom_x value is {bottom_y}")
-
 	depth_intrin2 = depth_frame.profile.as_video_stream_profile().intrinsics
 
 	true_middle = (bottom_x_left + bottom_x_right)/2
-	true_middle = true_middle- 1280/2
-	shape = undist.shape[1]/2 - 1280/2
+	print(f"the true middle value is {true_middle}")
+	# true_middle = true_middle - 1280/2
+	# shape = undist.shape[1]/2 - 1280/2
+	true_middle = true_middle
+	shape = undist.shape[1]/2
+	
+
+	print(f"the true middle pixel is {true_middle}")
+	print(f"the shape middle is {shape}")
+	print(f"the bottom y value is {int(bottom_y)}")
+
+	# true_middle = int(595.5)
+
+	## works
+
+	# shape = int(shape)
+	# true_middle = int(true_middle)
+	# shape = int(shape)
+
+	# bottom_y=15.5
+	true_middle = int(true_middle)
+	shape = int(shape)
+	bottom_y = int(30)
+	print(f"the distance is {depth_frame.get_distance(true_middle, 15)}")
 
 	# true_middle = (bottom_x_left + bottom_x_right)/2   # possible point of failure 
-	point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(15, 15))
+	point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
 	# point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
-	middle = rs.rs2_deproject_pixel_to_point(depth_intrin2, [shape, bottom_y], depth_frame.get_distance(15, 15))
+	middle = rs.rs2_deproject_pixel_to_point(depth_intrin2, [shape, bottom_y], depth_frame.get_distance(shape, bottom_y))
 
+	print(f"point1 is {point1[0]} and middle is {middle[0]}")
 	offset = point1[0] - middle[0]
-	print(offset)
 
 	# offset  = 1
 	# Convert pixel offset to meters
