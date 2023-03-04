@@ -283,9 +283,10 @@ def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	# point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
 	middle = rs.rs2_deproject_pixel_to_point(depth_intrin2, [shape, bottom_y], depth_frame.get_distance(15, 15))
 
-	# offset = point1[0] - middle[0]
+	offset = point1[0] - middle[0]
+	print(offset)
 
-	offset  = 1
+	# offset  = 1
 	# Convert pixel offset to meters
 	xm_per_pix = 3.7/700 # meters per pixel in x dimension
 	vehicle_offset *= xm_per_pix
