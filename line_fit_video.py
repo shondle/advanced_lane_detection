@@ -12,6 +12,7 @@ import pyrealsense2 as rs
 
 
 # Global variables (just to make the moviepy video annotation work)
+"""This would be good to adjust if we want to feed in realsense frames with a smaller width and height"""
 with open('calibrate_camera.p', 'rb') as f:
 	save_dict = pickle.load(f)
 mtx = save_dict['mtx']
@@ -24,7 +25,7 @@ left_curve, right_curve = 0., 0.  # radius of curvature for left and right lanes
 left_lane_inds, right_lane_inds = None, None  # for calculating curvature
 
 
-# MoviePy video annotation will call this function
+
 def annotate_image(img_in, depth_frame):
 	"""
 	Annotate the input image with lane line markings
@@ -88,12 +89,16 @@ def annotate_image(img_in, depth_frame):
 		else:
 			detected = False
 
-	vehicle_offset, offset = calc_vehicle_offset(undist, left_fit, right_fit, depth_frame)
+	# Calculate the offset of the vehicle from the middle.
+	# vehicle_offset is in pixels, offset is in meters
+	# (use offset for IGVC because it is in meters)
+
+	vehicle_offset, offset, left_line_data, right_line_data = calc_vehicle_offset(undist, left_fit, right_fit, depth_frame)
 
 	# Perform final visualization on top of original undistorted image
 	result = final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset)
 
-	return result, offset
+	return result, offset, left_line_data, right_line_data
 
 
 def annotate_video(input_file, output_file):
@@ -105,10 +110,10 @@ def annotate_video(input_file, output_file):
 
 if __name__ == '__main__':
 
+	""" running the realsense camera and feeding every frame into the lane detection program"""
 	pipeline = rs.pipeline()
 	config = rs.config()
-	config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30)
-	# config.enable_stream(rs.stream.color, 640, 480, rs.format.bgr8, 30)
+	config.enable_stream(rs.stream.depth, 1280, 720, rs.format.z16, 30) # this was 640/280 earlier, but had to change (hurts computation though)
 	config.enable_stream(rs.stream.color, 1280, 720, rs.format.bgr8, 30)
 
 	first_frame = 1
@@ -120,35 +125,30 @@ if __name__ == '__main__':
 	try:
 		while True:
 			# Wait for a coherent pair of frames: depth and color
-
 			frames = pipeline.wait_for_frames()
 			depth_frame = frames.get_depth_frame()
 			color_frame = frames.get_color_frame()
 			if not depth_frame or not color_frame:
 				continue
+
 			# Convert images to numpy arrays
 			depth_image = np.asanyarray(depth_frame.get_data())
 			color_image = np.asanyarray(color_frame.get_data())
 
-			print(color_image.shape)
 
-			# Apply threshold to get a binary image
-			# ret, binary_image = cv2.threshold(cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY), 210, 255, cv2.THRESH_BINARY)
-
+			# Put the CV lanes on the image, and return the offset of the vehicle from the middle. If it can't detect lanes, print error message.
+			# it also returns all line data along the left line, and all line data along the right line. Do with this as you choose
 			try:	
-				binary_image, offset = annotate_image(color_image, depth_frame)
+				binary_image, offset, left_line_data, right_line_data = annotate_image(color_image, depth_frame)
 			except:
 				print("Distortion amount exceeded")
 
-			# ret, binary_image = cv2.threshold(cv2.cvtColor(color_image, cv2.COLOR_BGR2GRAY), 175, 255, cv2.THRESH_BINARY)
 			linedata = {}
 			line_num = 1
-			# Detect lines using HoughLinesP
-			# lines = cv2.HoughLinesP(binary_image, 1, np.pi/180, 50, maxLineGap=50)
 
 			print(f"The offset value is {offset}")
 
-			# Show images
+			# Show the raw and annotated image
 			cv2.imshow("Binary Image", binary_image)
 			cv2.imshow("Line Detection", color_image)
 			key = cv2.waitKey(1)
@@ -159,9 +159,11 @@ if __name__ == '__main__':
 		cv2.destroyAllWindows()
 
 
-	# Annotate the video
+	
+	# Annotate a sample video instead of realsense camera input by running this example
 	# annotate_video('project_video.mp4', 'out.mp4')
 
+	# Annotate sample image instead of realsense camera input by running this example
 	# Show example annotated image on screen for sanity check
 	'''
 	img_file = 'test_images/test4.jpg'

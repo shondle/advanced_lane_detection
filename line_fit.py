@@ -260,6 +260,8 @@ def calc_curve(left_lane_inds, right_lane_inds, nonzerox, nonzeroy):
 def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	"""
 	Calculate vehicle offset from lane center, in meters
+	This return in meters is given in `offset`
+	Ignore `vehicle_offset` return value
 	"""
 	# Calculate vehicle center offset in pixels
 	bottom_y = undist.shape[0] - 1
@@ -271,45 +273,53 @@ def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	depth_intrin2 = depth_frame.profile.as_video_stream_profile().intrinsics
 
 	true_middle = (bottom_x_left + bottom_x_right)/2
-	print(f"the true middle value is {true_middle}")
-	# true_middle = true_middle - 1280/2
-	# shape = undist.shape[1]/2 - 1280/2
+
 	true_middle = true_middle
 	shape = undist.shape[1]/2
 	
 
-	print(f"the true middle pixel is {true_middle}")
-	print(f"the shape middle is {shape}")
-	print(f"the bottom y value is {int(bottom_y)}")
+	# print(f"the true middle pixel is {true_middle}")
+	# print(f"the shape middle is {shape}")
+	# print(f"the bottom y value is {int(bottom_y)}")
 
-	# true_middle = int(595.5)
-
-	## works
-
-	# shape = int(shape)
-	# true_middle = int(true_middle)
-	# shape = int(shape)
-
-	# bottom_y=15.5
 	true_middle = int(true_middle)
 	shape = int(shape)
 	bottom_y = int(30)
-	print(f"the distance is {depth_frame.get_distance(true_middle, 15)}")
 
-	# true_middle = (bottom_x_left + bottom_x_right)/2   # possible point of failure 
+	# point1 is where the middle of the vehicle should be inbetween the lanes
 	point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
-	# point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
+
+	# middle is where the vehicle middle is
 	middle = rs.rs2_deproject_pixel_to_point(depth_intrin2, [shape, bottom_y], depth_frame.get_distance(shape, bottom_y))
 
+	# The following is not being used but it could be to give the line data with depth in meters along the frame
+	left_line_data = []
+	right_line_data = []
+	for y in range(undist.shape[0]):
+		try:
+			x_left = left_fit[0]*(y**2) + left_fit[1]*y + left_fit[2]
+			x_right = right_fit[0]*(y**2) + right_fit[1]*y + right_fit[2]
+
+			x_left_meters = rs.rs2_deproject_pixel_to_point(depth_intrin2, [x_left, y], depth_frame.get_distance(x_left, y))
+			x_right_meters = rs.rs2_deproject_pixel_to_point(depth_intrin2, [x_right, y], depth_frame.get_distance(x_right, y))
+
+			left_line_data.append(x_left_meters)
+			right_line_data.append(x_right_meters)
+		except:
+			print("No line data this far up in the image")
+
+
 	print(f"point1 is {point1[0]} and middle is {middle[0]}")
+
+	## the following gives you the offset in meters. 
 	offset = point1[0] - middle[0]
 
 	# offset  = 1
 	# Convert pixel offset to meters
-	xm_per_pix = 3.7/700 # meters per pixel in x dimension
+	xm_per_pix = 3.7/700  # meters per pixel in x dimension
 	vehicle_offset *= xm_per_pix
 
-	return vehicle_offset, offset
+	return vehicle_offset, offset, left_line_data, right_line_data
 
 
 def final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset):

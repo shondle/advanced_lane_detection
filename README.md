@@ -1,5 +1,12 @@
 # Advanced Lane Detection
 ![annotated](output_images/annotated_test2.png)
+
+# IGVC
+This is a forked repo of a lane detection by George Sung. We have adapted this code for our use case. For team members, here is a description of how this code works. If you want to see how the computer vision works, scroll down to the overview section.
+
+
+
+
 ## Overview
 Detect lanes using computer vision techniques. This project is part of the [Udacity Self-Driving Car Nanodegree](https://www.udacity.com/drive), and much of the code is leveraged from the lecture notes.
 
