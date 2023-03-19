@@ -5,6 +5,7 @@ import matplotlib.image as mpimg
 import pickle
 from combined_thresh import combined_thresh
 from perspective_transform import perspective_transform
+import pyrealsense2 as rs
 
 
 def line_fit(binary_warped):
@@ -256,7 +257,7 @@ def calc_curve(left_lane_inds, right_lane_inds, nonzerox, nonzeroy):
 	return left_curverad, right_curverad
 
 
-def calc_vehicle_offset(undist, left_fit, right_fit):
+def calc_vehicle_offset(undist, left_fit, right_fit, depth_frame):
 	"""
 	Calculate vehicle offset from lane center, in meters
 	"""
@@ -266,11 +267,49 @@ def calc_vehicle_offset(undist, left_fit, right_fit):
 	bottom_x_right = right_fit[0]*(bottom_y**2) + right_fit[1]*bottom_y + right_fit[2]
 	vehicle_offset = undist.shape[1]/2 - (bottom_x_left + bottom_x_right)/2
 
+
+	depth_intrin2 = depth_frame.profile.as_video_stream_profile().intrinsics
+
+	true_middle = (bottom_x_left + bottom_x_right)/2
+	print(f"the true middle value is {true_middle}")
+	# true_middle = true_middle - 1280/2
+	# shape = undist.shape[1]/2 - 1280/2
+	true_middle = true_middle
+	shape = undist.shape[1]/2
+	
+
+	print(f"the true middle pixel is {true_middle}")
+	print(f"the shape middle is {shape}")
+	print(f"the bottom y value is {int(bottom_y)}")
+
+	# true_middle = int(595.5)
+
+	## works
+
+	# shape = int(shape)
+	# true_middle = int(true_middle)
+	# shape = int(shape)
+
+	# bottom_y=15.5
+	true_middle = int(true_middle)
+	shape = int(shape)
+	bottom_y = int(30)
+	print(f"the distance is {depth_frame.get_distance(true_middle, 15)}")
+
+	# true_middle = (bottom_x_left + bottom_x_right)/2   # possible point of failure 
+	point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
+	# point1 = rs.rs2_deproject_pixel_to_point(depth_intrin2, [true_middle, bottom_y], depth_frame.get_distance(true_middle, bottom_y))
+	middle = rs.rs2_deproject_pixel_to_point(depth_intrin2, [shape, bottom_y], depth_frame.get_distance(shape, bottom_y))
+
+	print(f"point1 is {point1[0]} and middle is {middle[0]}")
+	offset = point1[0] - middle[0]
+
+	# offset  = 1
 	# Convert pixel offset to meters
 	xm_per_pix = 3.7/700 # meters per pixel in x dimension
 	vehicle_offset *= xm_per_pix
 
-	return vehicle_offset
+	return vehicle_offset, offset
 
 
 def final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehicle_offset):
@@ -309,4 +348,3 @@ def final_viz(undist, left_fit, right_fit, m_inv, left_curve, right_curve, vehic
 	result = cv2.putText(result, label_str, (30,70), 0, 1, (0,0,0), 2, cv2.LINE_AA)
 
 	return result
-
